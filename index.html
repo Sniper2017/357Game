@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="./css/base.css" />
+        <script src="./js/vue-2.6.12.min.js"></script>
+        <script src="./js/game.js"></script>
+        <script type="text/javascript">
+            window.onload = function () {
+                var gameInstance;
+
+                var vm = new Vue({
+                    el: '#app',
+                    created: function () {},
+                    data: function () {
+                        return {
+                            step: 0,
+                            userData: {},
+                            data: [],
+                            //当前玩家序号
+                            userCur: 0,
+                            history: [],
+                        };
+                    },
+                    methods: {
+                        initGame: function () {
+                            this.userCur = 0;
+                            this.history = [];
+                            this.step = 0;
+                        },
+                        play: function () {
+                            this.initGame();
+                            gameInstance = new game(2);
+                            this.step = gameInstance.step;
+                            this.userData = gameInstance.userData;
+                            this.data = gameInstance.data;
+                            this.step++;
+                            this.setHistory('游戏开始了...');
+                        },
+                        setHistory: function (msg) {
+                            this.history.push(msg);
+                        },
+                        select: function () {
+                            let selectData = gameInstance.select();
+                            let data = gameInstance.data;
+                            let sum = gameInstance.sum;
+
+                            let user = this.userData[this.userCur];
+                            let msg = `${user.name}选取了第${selectData.row + 1}行，序列号为${selectData.selectArr.join('、')}的标签`;
+                            this.data = data;
+                            this.setHistory(msg);
+                            //把剩下的签全部拿完
+                            if (sum == 0) {
+                                this.step = -1;
+                                msg = `${user.name}拿到了最后一只签，输掉了游戏。`;
+                                this.setHistory(msg);
+                                return;
+                            }
+                            this.changeUser();
+                            if (sum <= 1) {
+                                this.step = -1;
+                                user = this.userData[this.userCur];
+                                msg = `${user.name}拿到了最后一只签，输掉了游戏。`;
+                                this.setHistory(msg);
+                            }
+                        },
+                        //切换用户
+                        changeUser: function () {
+                            this.userCur++;
+                            let userCur = this.userCur;
+                            if (userCur > 1) {
+                                this.step++;
+                                this.userCur = 0;
+                            }
+                        },
+                    },
+                });
+            };
+        </script>
+    </head>
+    <body>
+        <div class="container" id="app">
+            <div class="info">
+                <span v-if="step == 0">请开始游戏</span>
+                <span v-if="step > 0">
+                    第 {{step}} 局，请{{userData[userCur].name}}抽签
+                </span>
+                <span v-if="step < 0">
+                    游戏已结束，玩家“{{userData[userCur].name}}”输了。
+                </span>
+
+                <div class="user-info" v-if="step > 0">
+                    {{userData[userCur].name}}
+                </div>
+            </div>
+            <div class="screen">
+                <div class="poker-box">
+                    <div class="row" v-for="(item,index) in data" :key="index">
+                        <div class="poker" v-for="p in item" @click="">
+                            <div class="index">{{p.index}}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="msg-box">
+                    <div class="msg" v-for="(item,index) in history" :key="index">
+                        {{item}}
+                    </div>
+                </div>
+                <div class="play" @click="play" v-show="step <= 0">
+                    开始
+                </div>
+            </div>
+            <div class="btn-box" v-show="step > 0" @click="select">
+                <button class="mr10" type="button">选择标签</button>
+            </div>
+        </div>
+    </body>
+</html>
